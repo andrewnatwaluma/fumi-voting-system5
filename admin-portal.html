@@ -1,0 +1,1168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FUMI - Admin Portal</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --primary: #2c5aa0;
+            --secondary: #1e3c72;
+            --accent: #ff6b35;
+            --light: #f8f9fa;
+            --dark: #343a40;
+            --success: #28a745;
+            --danger: #dc3545;
+            --warning: #ffc107;
+            --info: #17a2b8;
+            --admin: #6f42c1;
+            --super-admin: #d63384;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            color: var(--dark);
+        }
+        
+        .container {
+            display: flex;
+            min-height: 100vh;
+        }
+        
+        /* Sidebar Navigation */
+        .sidebar {
+            width: 250px;
+            background: var(--secondary);
+            color: white;
+            padding: 20px 0;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .logo-container {
+            padding: 0 20px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 20px;
+        }
+        
+        .logo {
+            font-size: 2rem;
+            margin-right: 10px;
+        }
+        
+        .admin-type {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            margin-left: 10px;
+        }
+        
+        .admin-type.admin {
+            background: var(--admin);
+        }
+        
+        .admin-type.super-admin {
+            background: var(--super-admin);
+        }
+        
+        .nav-item {
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .nav-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .nav-item i {
+            margin-right: 10px;
+            width: 20px;
+            text-align: center;
+        }
+        
+        .nav-item.active {
+            background: var(--primary);
+            border-left: 4px solid var(--accent);
+        }
+        
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+        }
+        
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--primary);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 10px;
+            font-weight: bold;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+        }
+        
+        .card-title {
+            color: var(--primary);
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #eaeaea;
+            font-size: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        /* Login Section */
+        .login-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        }
+        
+        .login-card {
+            width: 100%;
+            max-width: 400px;
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--secondary);
+        }
+        
+        input[type="text"], input[type="password"], input[type="email"], select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+        
+        input:focus, select:focus {
+            border-color: var(--primary);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(44, 90, 160, 0.2);
+        }
+        
+        button {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        button:hover {
+            background: #e55a2b;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .btn-admin {
+            background: var(--admin);
+        }
+        
+        .btn-super-admin {
+            background: var(--super-admin);
+        }
+        
+        /* Results Section */
+        .results-container {
+            margin-top: 20px;
+        }
+        
+        .position-results {
+            margin-bottom: 30px;
+        }
+        
+        .result-item {
+            margin-bottom: 15px;
+        }
+        
+        .result-name {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+        
+        .progress-bar {
+            height: 10px;
+            background: #e9ecef;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        
+        .progress {
+            height: 100%;
+            background: var(--primary);
+            border-radius: 5px;
+        }
+        
+        .charts-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+        
+        .chart-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+        }
+        
+        /* Voters Table */
+        .table-container {
+            overflow-x: auto;
+            margin-top: 20px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: var(--secondary);
+        }
+        
+        tr:hover {
+            background: #f8f9fa;
+        }
+        
+        /* Action Buttons */
+        .action-btn {
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 14px;
+            margin-right: 5px;
+            cursor: pointer;
+        }
+        
+        .btn-edit {
+            background: var(--info);
+            color: white;
+        }
+        
+        .btn-delete {
+            background: var(--danger);
+            color: white;
+        }
+        
+        .btn-override {
+            background: var(--warning);
+            color: var(--dark);
+        }
+        
+        /* Modal */
+        .modal-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        
+        .modal {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+        
+        .modal-title {
+            margin-bottom: 20px;
+            color: var(--primary);
+        }
+        
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 20px;
+            gap: 10px;
+        }
+        
+        /* Toggle Switch */
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 30px;
+        }
+        
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 30px;
+        }
+        
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 22px;
+            width: 22px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        
+        input:checked + .slider {
+            background-color: var(--success);
+        }
+        
+        input:checked + .slider:before {
+            transform: translateX(30px);
+        }
+        
+        /* Hidden class */
+        .hidden {
+            display: none;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                width: 100%;
+                padding: 10px;
+            }
+            
+            .charts-container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Section -->
+    <div id="login-section" class="login-container">
+        <div class="login-card">
+            <div class="logo-container" style="text-align: center; margin-bottom: 30px;">
+                <i class="fas fa-hand-holding-medical logo"></i>
+                <h2>FUMI Admin Portal</h2>
+                <p>Sign in to access the dashboard</p>
+            </div>
+            
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" placeholder="Enter your username">
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" placeholder="Enter your password">
+            </div>
+            
+            <button id="login-btn" style="width: 100%;">Sign In</button>
+            
+            <div style="margin-top: 20px; text-align: center; color: #6c757d; font-size: 0.9rem;">
+                <p>Demo Credentials:</p>
+                <p>Admin: admin / admin123</p>
+                <p>Super Admin: superadmin / super123</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Admin Dashboard -->
+    <div id="admin-dashboard" class="container hidden">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="logo-container">
+                <h2><i class="fas fa-hand-holding-medical logo"></i> FUMI</h2>
+                <p>Voting System <span id="admin-badge" class="admin-type admin">Admin</span></p>
+            </div>
+            
+            <div class="nav-item active" data-section="dashboard">
+                <i class="fas fa-tachometer-alt"></i> Dashboard
+            </div>
+            
+            <div class="nav-item" data-section="results">
+                <i class="fas fa-chart-pie"></i> Results
+            </div>
+            
+            <div class="nav-item" data-section="reports">
+                <i class="fas fa-file-alt"></i> Reports
+            </div>
+            
+            <div class="nav-item super-admin-only" data-section="voters">
+                <i class="fas fa-users"></i> Voter Management
+            </div>
+            
+            <div class="nav-item super-admin-only" data-section="candidates">
+                <i class="fas fa-user-tie"></i> Candidate Management
+            </div>
+            
+            <div class="nav-item super-admin-only" data-section="election">
+                <i class="fas fa-vote-yea"></i> Election Control
+            </div>
+            
+            <div class="nav-item" style="margin-top: 20px;" id="logout-btn">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="header">
+                <h2 id="current-section">Dashboard</h2>
+                <div class="user-info">
+                    <div class="user-avatar" id="user-avatar">A</div>
+                    <div>
+                        <div id="user-name">Admin User</div>
+                        <div style="font-size: 0.8rem; color: #6c757d;" id="user-role">Administrator</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Dashboard Section -->
+            <div id="dashboard-section" class="section-content">
+                <div class="card">
+                    <div class="card-title">
+                        <span>Election Overview</span>
+                        <div>
+                            <span style="margin-right: 15px;">Election Status: <strong id="election-status">Active</strong></span>
+                            <span>Total Votes: <strong id="total-votes">1,243</strong></span>
+                        </div>
+                    </div>
+                    
+                    <div class="charts-container">
+                        <div class="chart-card">
+                            <h3>Voter Turnout</h3>
+                            <canvas id="turnout-chart" height="250"></canvas>
+                        </div>
+                        <div class="chart-card">
+                            <h3>Top Positions</h3>
+                            <canvas id="positions-chart" height="250"></canvas>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-title">Recent Activity</div>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Time</th>
+                                    <th>Voter</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>10:45 AM</td>
+                                    <td>John Doe</td>
+                                    <td>Voted for President</td>
+                                </tr>
+                                <tr>
+                                    <td>10:32 AM</td>
+                                    <td>Mary Smith</td>
+                                    <td>Voted for President & Vice President</td>
+                                </tr>
+                                <tr>
+                                    <td>10:15 AM</td>
+                                    <td>Robert Mugabe</td>
+                                    <td>Voted for Treasurer</td>
+                                </tr>
+                                <tr>
+                                    <td>10:05 AM</td>
+                                    <td>Sarah Johnson</td>
+                                    <td>Voted for all positions</td>
+                                </tr>
+                                <tr>
+                                    <td>09:52 AM</td>
+                                    <td>James Wilson</td>
+                                    <td>Voted for Secretary</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Results Section -->
+            <div id="results-section" class="section-content hidden">
+                <div class="card">
+                    <div class="card-title">
+                        <span>Live Election Results</span>
+                        <button id="export-results-btn"><i class="fas fa-download"></i> Export Results</button>
+                    </div>
+                    
+                    <div class="results-container" id="results-container">
+                        <!-- Results will be loaded here -->
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-title">Results Visualization</div>
+                    <div class="charts-container">
+                        <div class="chart-card">
+                            <h3>President - Vote Distribution</h3>
+                            <canvas id="president-chart" height="250"></canvas>
+                        </div>
+                        <div class="chart-card">
+                            <h3>Vice President - Vote Distribution</h3>
+                            <canvas id="vice-president-chart" height="250"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Reports Section -->
+            <div id="reports-section" class="section-content hidden">
+                <div class="card">
+                    <div class="card-title">Generate Reports</div>
+                    
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
+                        <div class="form-group">
+                            <label for="report-type">Report Type</label>
+                            <select id="report-type">
+                                <option value="vote-count">Vote Count Report</option>
+                                <option value="voter-turnout">Voter Turnout Report</option>
+                                <option value="result-summary">Result Summary</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="date-from">From Date</label>
+                            <input type="date" id="date-from">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="date-to">To Date</label>
+                            <input type="date" id="date-to">
+                        </div>
+                    </div>
+                    
+                    <button id="generate-report-btn" style="margin-top: 20px;">
+                        <i class="fas fa-file-pdf"></i> Generate Report
+                    </button>
+                    
+                    <div id="report-preview" style="margin-top: 30px; padding: 20px; border: 1px dashed #ddd; border-radius: 8px; background: #f9f9f9;">
+                        <h3>Report Preview</h3>
+                        <p>Generate a report to see the preview here.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Voter Management Section (Super Admin Only) -->
+            <div id="voters-section" class="section-content hidden">
+                <div class="card">
+                    <div class="card-title">
+                        <span>Voter Management</span>
+                        <div>
+                            <input type="text" placeholder="Search voter..." style="padding: 8px; border-radius: 4px; border: 1px solid #ddd;">
+                        </div>
+                    </div>
+                    
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>University</th>
+                                    <th>Status</th>
+                                    <th>Voted</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>John Doe</td>
+                                    <td>Makerere University</td>
+                                    <td><span style="color: var(--success);">Verified</span></td>
+                                    <td><span style="color: var(--success);">Yes</span></td>
+                                    <td>
+                                        <button class="action-btn btn-override" onclick="overrideVote('John Doe')">
+                                            <i class="fas fa-pen"></i> Override Vote
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Mary Smith</td>
+                                    <td>Mbarara University</td>
+                                    <td><span style="color: var(--success);">Verified</span></td>
+                                    <td><span style="color: var(--success);">Yes</span></td>
+                                    <td>
+                                        <button class="action-btn btn-override" onclick="overrideVote('Mary Smith')">
+                                            <i class="fas fa-pen"></i> Override Vote
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Robert Mugabe</td>
+                                    <td>Gulu University</td>
+                                    <td><span style="color: var(--warning);">Pending</span></td>
+                                    <td><span style="color: var(--danger);">No</span></td>
+                                    <td>
+                                        <button class="action-btn btn-override" onclick="overrideVote('Robert Mugabe')">
+                                            <i class="fas fa-pen"></i> Vote As
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Sarah Johnson</td>
+                                    <td>Makerere University</td>
+                                    <td><span style="color: var(--success);">Verified</span></td>
+                                    <td><span style="color: var(--success);">Yes</span></td>
+                                    <td>
+                                        <button class="action-btn btn-override" onclick="overrideVote('Sarah Johnson')">
+                                            <i class="fas fa-pen"></i> Override Vote
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>James Wilson</td>
+                                    <td>Kampala University</td>
+                                    <td><span style="color: var(--danger);">Rejected</span></td>
+                                    <td><span style="color: var(--danger);">No</span></td>
+                                    <td>
+                                        <button class="action-btn btn-override" onclick="overrideVote('James Wilson')">
+                                            <i class="fas fa-pen"></i> Vote As
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Candidate Management Section (Super Admin Only) -->
+            <div id="candidates-section" class="section-content hidden">
+                <div class="card">
+                    <div class="card-title">
+                        <span>Candidate Management</span>
+                        <button id="add-candidate-btn" class="btn-admin">
+                            <i class="fas fa-plus"></i> Add Candidate
+                        </button>
+                    </div>
+                    
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Photo</th>
+                                    <th>Name</th>
+                                    <th>Position</th>
+                                    <th>Votes</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><img src="https://via.placeholder.com/40?text=SD" style="width: 40px; height: 40px; border-radius: 50%;"></td>
+                                    <td>Dr. Sarah Mukasa</td>
+                                    <td>President</td>
+                                    <td>325</td>
+                                    <td>
+                                        <button class="action-btn btn-edit"><i class="fas fa-edit"></i></button>
+                                        <button class="action-btn btn-delete"><i class="fas fa-trash"></i></button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><img src="https://via.placeholder.com/40?text=JO" style="width: 40px; height: 40px; border-radius: 50%;"></td>
+                                    <td>Dr. James Okello</td>
+                                    <td>President</td>
+                                    <td>175</td>
+                                    <td>
+                                        <button class="action-btn btn-edit"><i class="fas fa-edit"></i></button>
+                                        <button class="action-btn btn-delete"><i class="fas fa-trash"></i></button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><img src="https://via.placeholder.com/40?text=RN" style="width: 40px; height: 40px; border-radius: 50%;"></td>
+                                    <td>Dr. Rebecca Namukwaya</td>
+                                    <td>Vice President</td>
+                                    <td>360</td>
+                                    <td>
+                                        <button class="action-btn btn-edit"><i class="fas fa-edit"></i></button>
+                                        <button class="action-btn btn-delete"><i class="fas fa-trash"></i></button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><img src="https://via.placeholder.com/40?text=DS" style="width: 40px; height: 40px; border-radius: 50%;"></td>
+                                    <td>Dr. Daniel Ssebunya</td>
+                                    <td>Vice President</td>
+                                    <td>140</td>
+                                    <td>
+                                        <button class="action-btn btn-edit"><i class="fas fa-edit"></i></button>
+                                        <button class="action-btn btn-delete"><i class="fas fa-trash"></i></button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Election Control Section (Super Admin Only) -->
+            <div id="election-section" class="section-content hidden">
+                <div class="card">
+                    <div class="card-title">Election Control</div>
+                    
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+                        <div>
+                            <h3>Election Status</h3>
+                            <div style="display: flex; align-items: center; margin-top: 15px;">
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="election-toggle" checked>
+                                    <span class="slider"></span>
+                                </label>
+                                <span style="margin-left: 15px; font-weight: bold;" id="status-text">Election is ACTIVE</span>
+                            </div>
+                            
+                            <div id="election-controls" style="margin-top: 30px;">
+                                <div class="form-group">
+                                    <label for="start-time">Start Time</label>
+                                    <input type="datetime-local" id="start-time" class="form-control">
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="end-time">End Time</label>
+                                    <input type="datetime-local" id="end-time" class="form-control">
+                                </div>
+                                
+                                <button id="save-time-btn" class="btn-admin" style="margin-top: 10px;">
+                                    <i class="fas fa-save"></i> Save Time Settings
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <h3>Danger Zone</h3>
+                            <div style="background: #fff3f3; padding: 20px; border-radius: 8px; margin-top: 15px;">
+                                <p style="margin-bottom: 15px;">These actions are irreversible. Please proceed with caution.</p>
+                                
+                                <div class="form-group">
+                                    <label for="admin-password">Super Admin Password</label>
+                                    <input type="password" id="admin-password" placeholder="Enter your password">
+                                </div>
+                                
+                                <button id="reset-election-btn" class="btn-delete" style="width: 100%; margin-top: 10px;">
+                                    <i class="fas fa-trash"></i> Reset Election
+                                </button>
+                                
+                                <button id="clear-votes-btn" class="btn-delete" style="width: 100%; margin-top: 10px;">
+                                    <i class="fas fa-broom"></i> Clear All Votes
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Override Vote Modal (Super Admin Only) -->
+    <div id="override-modal" class="modal-backdrop hidden">
+        <div class="modal">
+            <h3 class="modal-title">Override Vote for <span id="override-voter-name">John Doe</span></h3>
+            
+            <div class="form-group">
+                <label for="candidate-select">Select Candidate</label>
+                <select id="candidate-select">
+                    <option value="">-- Select Candidate --</option>
+                    <option value="1">Dr. Sarah Mukasa (President)</option>
+                    <option value="2">Dr. James Okello (President)</option>
+                    <option value="3">Dr. Rebecca Namukwaya (Vice President)</option>
+                    <option value="4">Dr. Daniel Ssebunya (Vice President)</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="override-password">Super Admin Password</label>
+                <input type="password" id="override-password" placeholder="Enter your password">
+            </div>
+            
+            <div class="modal-actions">
+                <button id="cancel-override">Cancel</button>
+                <button id="confirm-override" class="btn-super-admin">Override Vote</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Supabase configuration
+        const SUPABASE_URL = 'https://iaenttkokcxtiauzjtgw.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlhZW50dGtva2N4dGlhdXpqdGd3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc4NDQ2NDksImV4cCI6MjA3MzQyMDY0OX0.u6ZBX-d_CTNlA94OM7h2JerNpmhuHZxYSXmj0OxRhRI';
+        
+        // Initialize Supabase
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        // Current user state
+        let currentUser = null;
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check if user is already logged in
+            const savedUser = localStorage.getItem('fumi_admin_user');
+            if (savedUser) {
+                currentUser = JSON.parse(savedUser);
+                showAdminDashboard();
+            }
+            
+            // Login functionality
+            document.getElementById('login-btn').addEventListener('click', login);
+            
+            // Navigation
+            document.querySelectorAll('.nav-item').forEach(item => {
+                if (!item.id) { // Skip logout button
+                    item.addEventListener('click', function() {
+                        switchSection(this.dataset.section);
+                    });
+                }
+            });
+            
+            // Logout
+            document.getElementById('logout-btn').addEventListener('click', logout);
+            
+            // Super admin only sections
+            if (currentUser && currentUser.role === 'admin') {
+                document.querySelectorAll('.super-admin-only').forEach(item => {
+                    item.classList.add('hidden');
+                });
+            }
+            
+            // Initialize charts
+            initCharts();
+            
+            // Override vote modal
+            document.getElementById('cancel-override').addEventListener('click', function() {
+                document.getElementById('override-modal').classList.add('hidden');
+            });
+            
+            document.getElementById('confirm-override').addEventListener('click', function() {
+                const password = document.getElementById('override-password').value;
+                if (password === 'super123') {
+                    alert('Vote overridden successfully!');
+                    document.getElementById('override-modal').classList.add('hidden');
+                } else {
+                    alert('Incorrect password!');
+                }
+            });
+            
+            // Election control
+            document.getElementById('election-toggle').addEventListener('change', function() {
+                const statusText = document.getElementById('status-text');
+                if (this.checked) {
+                    statusText.textContent = 'Election is ACTIVE';
+                    statusText.style.color = 'var(--success)';
+                } else {
+                    statusText.textContent = 'Election is PAUSED';
+                    statusText.style.color = 'var(--danger)';
+                }
+            });
+        });
+        
+        function login() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            // Demo authentication - replace with real Supabase auth
+            if (username === 'admin' && password === 'admin123') {
+                currentUser = { username: 'admin', role: 'admin', name: 'Admin User' };
+                localStorage.setItem('fumi_admin_user', JSON.stringify(currentUser));
+                showAdminDashboard();
+            } else if (username === 'superadmin' && password === 'super123') {
+                currentUser = { username: 'superadmin', role: 'superadmin', name: 'Super Admin' };
+                localStorage.setItem('fumi_admin_user', JSON.stringify(currentUser));
+                showAdminDashboard();
+            } else {
+                alert('Invalid credentials! Please try again.');
+            }
+        }
+        
+        function showAdminDashboard() {
+            document.getElementById('login-section').classList.add('hidden');
+            document.getElementById('admin-dashboard').classList.remove('hidden');
+            
+            // Update UI based on user role
+            document.getElementById('user-name').textContent = currentUser.name;
+            document.getElementById('user-avatar').textContent = currentUser.name.charAt(0);
+            document.getElementById('user-role').textContent = currentUser.role === 'admin' ? 'Administrator' : 'Super Administrator';
+            
+            document.getElementById('admin-badge').textContent = currentUser.role === 'admin' ? 'Admin' : 'Super Admin';
+            document.getElementById('admin-badge').className = currentUser.role === 'admin' ? 
+                'admin-type admin' : 'admin-type super-admin';
+                
+            // Hide super admin sections for regular admin
+            if (currentUser.role === 'admin') {
+                document.querySelectorAll('.super-admin-only').forEach(item => {
+                    item.classList.add('hidden');
+                });
+            } else {
+                document.querySelectorAll('.super-admin-only').forEach(item => {
+                    item.classList.remove('hidden');
+                });
+            }
+            
+            // Load initial data
+            loadResults();
+        }
+        
+        function logout() {
+            currentUser = null;
+            localStorage.removeItem('fumi_admin_user');
+            document.getElementById('admin-dashboard').classList.add('hidden');
+            document.getElementById('login-section').classList.remove('hidden');
+            document.getElementById('username').value = '';
+            document.getElementById('password').value = '';
+        }
+        
+        function switchSection(section) {
+            // Update navigation
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            document.querySelector(`.nav-item[data-section="${section}"]`).classList.add('active');
+            
+            // Update content
+            document.querySelectorAll('.section-content').forEach(content => {
+                content.classList.add('hidden');
+            });
+            document.getElementById(`${section}-section`).classList.remove('hidden');
+            
+            // Update header
+            document.getElementById('current-section').textContent = 
+                document.querySelector(`.nav-item[data-section="${section}"]`).textContent;
+                
+            // Load section-specific data
+            if (section === 'results') {
+                loadResults();
+            }
+        }
+        
+        function loadResults() {
+            // In a real application, you would fetch this from Supabase
+            const resultsContainer = document.getElementById('results-container');
+            resultsContainer.innerHTML = `
+                <div class="position-results">
+                    <h3>President</h3>
+                    <div class="result-item">
+                        <div class="result-name">
+                            <span>Dr. Sarah Mukasa</span>
+                            <span>65%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress" style="width: 65%"></div>
+                        </div>
+                    </div>
+                    <div class="result-item">
+                        <div class="result-name">
+                            <span>Dr. James Okello</span>
+                            <span>35%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress" style="width: 35%"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="position-results">
+                    <h3>Vice President</h3>
+                    <div class="result-item">
+                        <div class="result-name">
+                            <span>Dr. Rebecca Namukwaya</span>
+                            <span>72%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress" style="width: 72%"></div>
+                        </div>
+                    </div>
+                    <div class="result-item">
+                        <div class="result-name">
+                            <span>Dr. Daniel Ssebunya</span>
+                            <span>28%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress" style="width: 28%"></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function initCharts() {
+            // Turnout chart
+            const turnoutCtx = document.getElementById('turnout-chart').getContext('2d');
+            new Chart(turnoutCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Voted', 'Not Voted'],
+                    datasets: [{
+                        data: [65, 35],
+                        backgroundColor: ['#28a745', '#dc3545']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+            
+            // Positions chart
+            const positionsCtx = document.getElementById('positions-chart').getContext('2d');
+            new Chart(positionsCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['President', 'Vice President', 'Secretary', 'Treasurer'],
+                    datasets: [{
+                        label: 'Votes Cast',
+                        data: [500, 480, 420, 380],
+                        backgroundColor: '#2c5aa0'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+            
+            // President chart
+            const presidentCtx = document.getElementById('president-chart').getContext('2d');
+            new Chart(presidentCtx, {
+                type: 'pie',
+                data: {
+                    labels: ['Dr. Sarah Mukasa', 'Dr. James Okello'],
+                    datasets: [{
+                        data: [65, 35],
+                        backgroundColor: ['#2c5aa0', '#ff6b35']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+            
+            // Vice President chart
+            const vicePresidentCtx = document.getElementById('vice-president-chart').getContext('2d');
+            new Chart(vicePresidentCtx, {
+                type: 'pie',
+                data: {
+                    labels: ['Dr. Rebecca Namukwaya', 'Dr. Daniel Ssebunya'],
+                    datasets: [{
+                        data: [72, 28],
+                        backgroundColor: ['#2c5aa0', '#ff6b35']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+        }
+        
+        function overrideVote(voterName) {
+            if (currentUser.role !== 'superadmin') {
+                alert('Only Super Admin can override votes!');
+                return;
+            }
+            
+            document.getElementById('override-voter-name').textContent = voterName;
+            document.getElementById('override-modal').classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
