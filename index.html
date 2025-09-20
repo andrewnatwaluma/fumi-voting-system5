@@ -1045,6 +1045,7 @@
             
             // Function to simulate upload process
             function simulateUpload() {
+        
                 proceedButton.disabled = true;
                 proceedButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
                 
@@ -1075,3 +1076,31 @@
     </script>
 </body>
 </html>
+<!-- Add this modal at the bottom of your index.html, just before the closing </body> tag -->
+<div id="admin-login-modal" class="modal-backdrop hidden">
+    <div class="modal">
+        <h3 class="modal-title">Admin Login</h3>
+        
+        <div class="form-group">
+            <label for="admin-username">Username</label>
+            <input type="text" id="admin-username" placeholder="Admin username">
+        </div>
+        
+        <div class="form-group">
+            <label for="admin-password">Password</label>
+            <input type="password" id="admin-password" placeholder="Admin password">
+        </div>
+        
+        <div class="modal-actions">
+            <button id="cancel-admin-login">Cancel</button>
+            <button id="submit-admin-login" class="btn-admin">Login</button>
+        </div>
+    </div>
+</div>
+
+<!-- Add this admin button to your footer or header -->
+<div style="text-align: center; margin-top: 20px;">
+    <a href="#" id="admin-login-btn" style="color: #666; font-size: 12px; text-decoration: none;">
+        <i class="fas fa-lock"></i> Admin Access
+    </a>
+</div>
