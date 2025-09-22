@@ -21,3 +21,14 @@ function requireSuperAdmin() {
     }
     return true;
 }
+// Add this to your current auth.js file
+document.addEventListener('DOMContentLoaded', function() {
+    const adminButton = document.getElementById('admin-access-btn');
+    
+    if (adminButton) {
+        adminButton.addEventListener('click', function() {
+            // Simple redirect first (add authentication later)
+            window.location.href = 'admin-dashboard.html';
+        });
+    }
+});
